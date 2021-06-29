@@ -1,0 +1,19 @@
+class Action:
+    pass
+
+class EscapeAction(Action):
+    pass
+
+class FullScreenAction(Action):
+    FullScreen = False
+
+    def __init__(self):
+        FullScreenAction.FullScreen = not FullScreenAction.FullScreen
+
+class MovementAction(Action):
+
+    def __init__(self, dx: int, dy: int):
+        super().__init__()
+
+        self.dx = dx
+        self.dy = dy
