@@ -3,6 +3,8 @@ from tcod import Console as tcod_Console
 from tcod import context as tcod_context
 from tcod import event as tcod_event
 from tcod import  BKGND_NONE
+from tcod import lib as tcod_lib
+import tcod
 
 from Source.input_handlers import handle_keys
 
@@ -32,17 +34,25 @@ def main():
             for event in tcod_event.get():
                 context.convert_event(event)
                 action = handle_keys(event)
+                if event.type == "QUIT":
+                    raise SystemExit()
+
 
                 move = action.get('move')
-                exit = action.get('exit')
+                action_exit = action.get('exit')
+                fullscreen = action.get('full screen')
 
-                if move:
-                    dx, dy = move
-                    player_x += dx
-                    player_y += dy
+            if move:
+                dx, dy = move
+                player_x += dx
+                player_y += dy
 
-                if event.type == "QUIT" or exit:
-                    raise SystemExit()
+            if fullscreen:
+                is_fullscreen = tcod_lib.SDL_GetWindowFlags(context.sdl_window_p) & tcod_context.SDL_WINDOW_FULLSCREEN_DESKTOP
+                tcod_lib.SDL_SetWindowFullscreen(context.sdl_window_p, 0 if is_fullscreen else tcod_context.SDL_WINDOW_FULLSCREEN_DESKTOP )
+            if action_exit:
+                 raise SystemExit()
+
 
 
 if __name__ == '__main__':
