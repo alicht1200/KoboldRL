@@ -1,7 +1,9 @@
 from typing import Optional
-import  tcod.event
+
+import tcod.event
 
 from  source.actions import *
+
 
 class EventHandler(tcod.event.EventDispatch[Action]):
 
