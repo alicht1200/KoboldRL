@@ -62,7 +62,7 @@ class Engine:
             action.perform(self, self.player)
 
 
-    def render(self, console: Console, context: Context) -> None:
+    def render(self, console: Console, context: Context, seed) -> None:
         screen_width = self.root_console.width
         screen_height = self.root_console.height - 5
         self.game_map.render(console)
@@ -82,5 +82,6 @@ class Engine:
                 self.console_y = min(max(0, self.player.y - screen_height//2), console.height - screen_height)
         ##########################
         console.blit(self.root_console, 0, 0, self.console_x, self.console_y, screen_width, screen_height)
+        self.root_console.print(x=0, y=56, string=f'seed = {seed}')
         context.present(self.root_console,integer_scaling=True)
         console.clear()
