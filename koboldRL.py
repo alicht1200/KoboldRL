@@ -1,20 +1,19 @@
 #!/usr/bin/env python3
 
+import configparser
+from datetime import datetime
+import copy
+
 import tcod
 
-import configparser
-
-from datetime import datetime
-
 from source.engine import Engine
-from source.input_handlers import EventHandler
 from source.entity import Entity
+from source.input_handlers import EventHandler
 # from source.game_map import GameMap
-from source.dungeon_gen import generate_sewer_dungeon, generate_dungeon
+from source.map_generation.dungeon_gen import generate_sewer_dungeon
+import source.map_generation.entity_factories as entity_list
 from source.screen_definitions import ScrollType
 
-from os import getcwd
-from os.path import join
 
 def main():
     screen_config = configparser.ConfigParser()
@@ -24,6 +23,7 @@ def main():
     scroll_type = ScrollType[screen_config['Scrolling']['scroll_type']]
     scroll_tiles = int(screen_config['Scrolling']['scroll_tiles'])
     seed =datetime.now().timestamp()
+    print(seed) # TODO: remove this in prodiction.
 
 
     # Following block belongs in Dungeon Generation.
@@ -38,19 +38,8 @@ def main():
 
     event_handler = EventHandler()
 
-    player = Entity((dungeon_width // 2), (dungeon_height // 2), "@", (255, 255, 255))
-    entities = {player}
+    player = copy.deepcopy(entity_list.player)
 
-
-    # game_map = generate_dungeon(
-    #     max_rooms= max_dungeon_rooms,
-    #     room_min_size= dungeon_room_min_size,
-    #     room_max_size= dungeon_room_max_size,
-    #     map_width= dungeon_width,
-    #     map_height= dungeon_height,
-    #     player= player,
-    #     seed= seed
-    # )
 
     game_map = generate_sewer_dungeon(
         max_tunnels= max_sewer_tunnels,
@@ -64,7 +53,7 @@ def main():
     )
 
     root_console = tcod.Console(width=screen_width, height=screen_height, order='F')
-    engine = Engine(entities, event_handler, game_map, player, root_console, scroll_type, scroll_tiles)
+    engine = Engine(event_handler, game_map, player, root_console, scroll_type, scroll_tiles)
 
     with tcod.context.new(
             columns=screen_width,
@@ -81,11 +70,6 @@ def main():
 
             events = tcod.event.get()
             engine.handle_events(events, context)
-
-            # Little code segment to check map generations (consider making a special source for it.)
-            # engine.game_map = generate_sewer_dungeon(dungeon_width, dungeon_height, player, seed)
-            # context.save_screenshot(join(getcwd(), f'ScreenShot_{datetime.now().timestamp()}_{i}.png'))
-            # i += 1
 
 
 if __name__ == '__main__':
