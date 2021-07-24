@@ -1,14 +1,61 @@
-from typing import Optional
+from __future__ import annotations
+
+from typing import Optional, TYPE_CHECKING
 
 import tcod.event
 
 from  source.actions import *
 
+if TYPE_CHECKING:
+    from source.engine import Engine
+
+MOVE_KEYS = {
+    #Arrow Keys.
+    tcod.event.K_UP: (0, -1),
+    tcod.event.K_DOWN: (0, 1),
+    tcod.event.K_LEFT: (-1, 0),
+    tcod.event.K_RIGHT: (1, 0),
+    tcod.event.K_HOME: (-1, -1),
+    tcod.event.K_END: (-1, 1),
+    tcod.event.K_PAGEUP: (1, -1),
+    tcod.event.K_PAGEDOWN: (1, 1),
+    # Numpad keys.
+    tcod.event.K_KP_1: (-1, 1),
+    tcod.event.K_KP_2: (0, 1),
+    tcod.event.K_KP_3: (1, 1),
+    tcod.event.K_KP_4: (-1, 0),
+    tcod.event.K_KP_6: (1, 0),
+    tcod.event.K_KP_7: (-1, -1),
+    tcod.event.K_KP_8: (0, -1),
+    tcod.event.K_KP_9: (1, -1),
+}
+
+WAIT_KEYS = {
+    tcod.event.K_PERIOD,
+    tcod.event.K_KP_5,
+}
 
 class EventHandler(tcod.event.EventDispatch[Action]):
+    def __init__(self, engine:Engine):
+        self.engine = engine
+
+    def handle_events(self) -> None:
+        raise NotImplementedError()
 
     def ev_quit(self, event: "tcod.event.Quit") -> Optional[Action]:
         raise SystemExit()
+
+class MainGameEventHandler(EventHandler):
+    def handle_events(self) -> None:
+        for event in tcod.event.get():
+            action = self.dispatch(event)
+
+            if action is None:
+                continue
+
+            action.perform()
+            self.engine.handle_enemy_turns()
+            self.engine.update_fov() # Update the FOV before the players next action.
 
     def ev_windowresized(self, event: "tcod.event.WindowResized"):
         return ResizeAction()
@@ -22,22 +69,41 @@ class EventHandler(tcod.event.EventDispatch[Action]):
         key = event.sym
         mod = event.mod
 
-        if key == tcod.event.K_UP:
-            action = MovementAction(dx=0, dy=-1)
-        elif key == tcod.event.K_DOWN:
-            action = MovementAction(dx=0, dy=1)
-        elif key == tcod.event.K_LEFT:
-            action = MovementAction(dx=-1, dy=0)
-        elif key == tcod.event.K_RIGHT:
-            action = MovementAction(dx=1, dy=0)
+        player = self.engine.player
+
+        if key in MOVE_KEYS:
+            dx, dy = MOVE_KEYS[key]
+            action = BumpAction(player, dx, dy)
+        elif key in WAIT_KEYS:
+            action = WaitAction(player)
 
         elif key == tcod.event.K_ESCAPE:
-            action = EscapeAction()
+            action = EscapeAction(player)
 
         elif key == tcod.event.K_F12:
             action = ScreenShotAction()
 
         elif key == tcod.event.K_RETURN and (mod & tcod.event.Modifier.ALT) != 0:
             action = FullScreenAction()
+
+        return action
+
+class GameOverEventHandler(EventHandler):
+    def handle_events(self) -> None:
+        for event in tcod.event.get():
+            action = self.dispatch(event)
+
+            if action is None:
+                continue
+
+            action.perform()
+
+    def ev_keydown(self, event: "tcod.event.KeyDown") -> Optional[Action]:
+        action: Optional[Action] = None
+
+        key = event.sym
+
+        if key == tcod.event.K_ESCAPE:
+            action = EscapeAction(self.engine.player)
 
         return action

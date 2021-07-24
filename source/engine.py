@@ -1,28 +1,32 @@
-from typing import Set, Iterable, Any
+from __future__ import annotations
+from typing import TYPE_CHECKING
 
 from tcod import lib
 from tcod.context import  Context
 from tcod.console import Console
 from tcod.context import SDL_WINDOW_FULLSCREEN_DESKTOP
+from tcod.map import compute_fov
 
 
 from os import getcwd
 from os.path import join
 from datetime import datetime
 
+from source.input_handlers import MainGameEventHandler
+if TYPE_CHECKING:
+    from source.entity import Actor
+    from source.game_map import GameMap
+    from source.input_handlers import EventHandler
 
-from source.actions import *
-from source.entity import Entity
-from source.game_map import GameMap
-from source.input_handlers import EventHandler
 from source.screen_definitions import ScrollType
 
 class Engine:
-    def __init__(self, entities: Set[Entity], event_handler: EventHandler, game_map: GameMap, player: Entity, root_console: Console, scroll_type: ScrollType, scroll_value: int):
-        self.entities = entities
-        self.event_handler = event_handler
-        self.game_map = game_map
+    game_map: GameMap
+
+    def __init__(self, player: Actor, context: Context, root_console: Console, scroll_type: ScrollType, scroll_value: int):
+        self.event_handler : EventHandler = MainGameEventHandler(self)
         self.player = player
+        self.context = context
         self.root_console = root_console
         self.screen_maximised = False
         self.scroll_type = scroll_type
@@ -30,44 +34,47 @@ class Engine:
         self.console_x = 0
         self.console_y = 0
 
-    def handle_events(self, events: Iterable[Any], context: Context) -> None:
-        for event in events:
-            action = self.event_handler.dispatch(event)
+    def handle_enemy_turns(self)-> None:
+        for entity in set(self.game_map.actors) - {self.player}:
+            if entity.ai:
+                entity.ai.perform()
 
-            if action is None:
-                continue
+    def take_screenshot(self)->None:
+        self.context.save_screenshot(join(getcwd(), f'ScreenShot_{datetime.now().timestamp()}.png'))
 
-            elif isinstance(action, ScreenShotAction):
-                context.save_screenshot(join(getcwd(), f'ScreenShot_{datetime.now().timestamp()}.png'))
+    def screen_resize(self)->None:
+        screen_width, screen_height = self.context.recommended_console_size(1, 1)
+        if not self.screen_maximised:
+            lib.SDL_SetWindowSize(
+                self.context.sdl_window_p,
+                screen_width * 16, screen_height * 16)
+        else:
+            self.screen_maximised = False
+        self.root_console = self.context.new_console(1, 1)
 
-            # Screen related Actions
-            elif isinstance(action, FullScreenAction):
-                self.screen_maximised = True
-                lib.SDL_SetWindowFullscreen(
-                    context.sdl_window_p,
-                    SDL_WINDOW_FULLSCREEN_DESKTOP if action.FullScreen else 0
-                )
-                lib.SDL_SetWindowSize(context.sdl_window_p, self.root_console.width * 16, self.root_console.height * 16)
-            elif isinstance(action, ResizeAction):
-                screen_width, screen_height = context.recommended_console_size(1, 1)
-                if not self.screen_maximised:
-                    lib.SDL_SetWindowSize(
-                        context.sdl_window_p,
-                        screen_width * 16, screen_height * 16)
-                else:
-                    self.screen_maximised = False
-                self.root_console = context.new_console(1, 1)
+    def set_fullscreen(self, full_screen)->None:
+        self.screen_maximised = True
+        lib.SDL_SetWindowFullscreen(
+            self.context.sdl_window_p,
+            SDL_WINDOW_FULLSCREEN_DESKTOP if full_screen else 0
+        )
+        lib.SDL_SetWindowSize(self.context.sdl_window_p, self.root_console.width * 16, self.root_console.height * 16)
 
-
-            action.perform(self, self.player)
+    def update_fov(self) -> None:
+        """Recompute the visible area based on the players point of view."""
+        self.game_map.visible[:] = compute_fov(
+            self.game_map.tiles['transparent'],
+            (self.player.x, self.player.y),
+            radius=8,
+        )
+        # If a tile is 'visible' it should be added to 'explored'
+        self.game_map.explored |= self.game_map.visible
 
 
     def render(self, console: Console, context: Context, seed) -> None:
         screen_width = self.root_console.width
         screen_height = self.root_console.height - 5
         self.game_map.render(console)
-        for entity in self.entities:
-            console.print(entity.x, entity.y, entity.char, entity.color)
 
         # handle screen scroll   #
         if self.scroll_type == ScrollType.GRANULARITY:
@@ -82,6 +89,7 @@ class Engine:
                 self.console_y = min(max(0, self.player.y - screen_height//2), console.height - screen_height)
         ##########################
         console.blit(self.root_console, 0, 0, self.console_x, self.console_y, screen_width, screen_height)
-        self.root_console.print(x=0, y=56, string=f'seed = {seed}')
+        self.root_console.print(x=0, y=console.height + 1, string=f'seed = {seed}')
+        self.root_console.print(x=1, y=console.height + 2, string=f'HP: {self.player.fighter.hp}/{self.player.fighter.max_hp}')
         context.present(self.root_console,integer_scaling=True)
         console.clear()
