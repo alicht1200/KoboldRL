@@ -13,6 +13,8 @@ from os.path import join
 from datetime import datetime
 
 from source.input_handlers import MainGameEventHandler
+from source.message_log import  MessageLog
+from source.render_functions import render_bar, render_names_at_mouse_location
 if TYPE_CHECKING:
     from source.entity import Actor
     from source.game_map import GameMap
@@ -25,6 +27,8 @@ class Engine:
 
     def __init__(self, player: Actor, context: Context, root_console: Console, scroll_type: ScrollType, scroll_value: int):
         self.event_handler : EventHandler = MainGameEventHandler(self)
+        self.message_log = MessageLog()
+        self.mouse_location = (0,0)
         self.player = player
         self.context = context
         self.root_console = root_console
@@ -71,9 +75,9 @@ class Engine:
         self.game_map.explored |= self.game_map.visible
 
 
-    def render(self, console: Console, context: Context, seed) -> None:
+    def render(self, console: Console) -> None:
         screen_width = self.root_console.width
-        screen_height = self.root_console.height - 5
+        screen_height = self.root_console.height - 7
         self.game_map.render(console)
 
         # handle screen scroll   #
@@ -89,7 +93,8 @@ class Engine:
                 self.console_y = min(max(0, self.player.y - screen_height//2), console.height - screen_height)
         ##########################
         console.blit(self.root_console, 0, 0, self.console_x, self.console_y, screen_width, screen_height)
-        self.root_console.print(x=0, y=console.height + 1, string=f'seed = {seed}')
-        self.root_console.print(x=1, y=console.height + 2, string=f'HP: {self.player.fighter.hp}/{self.player.fighter.max_hp}')
-        context.present(self.root_console,integer_scaling=True)
-        console.clear()
+        # self.root_console.print(x=0, y=screen_height, string=f'seed = {seed}')
+        self.message_log.render(console=self.root_console, x=21, y=screen_height + 1, width=screen_width - 22, height=self.root_console.height - screen_height)
+        render_bar(console=self.root_console, current_value=self.player.fighter.hp, maximum_value=self.player.fighter.max_hp, total_width=20)
+
+        render_names_at_mouse_location(console=self.root_console, x=21, y=screen_height, engine=self)

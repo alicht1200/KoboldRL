@@ -15,9 +15,10 @@ player = Actor(
     char='@',
     color=color_white,
     walks=True,
+    small=True,
     name='Kobold',
     ai_cls= HostileEnemy,
-    fighter=Fighter(hp=30, dodge= 15, resistance=0, accuracy=1, damage=(1,4))
+    fighter=Fighter(hp=30, dodge= 15, resistance=0, accuracy=0, damage=(1,4))
 )
 
 
@@ -30,6 +31,7 @@ rat = Actor(
     char='r',
     color=color_dark_gray,
     walks=True,
+    small=True,
     name='Rat',
     ai_cls= HostileEnemy,
     fighter=Fighter(hp=4, dodge= 8, resistance=0, accuracy=0, damage=(1,3))
@@ -51,7 +53,7 @@ slime = Actor(
     walks=True,
     name='Slime',
     ai_cls = HostileEnemy,
-    fighter = Fighter(hp=4, dodge=5, resistance=2, accuracy=0, damage=(1, 3))
+    fighter = Fighter(hp=4, dodge=5, resistance=1, accuracy=0, damage=(1, 3))
 )
 
 crocodile = Actor(
@@ -63,19 +65,20 @@ crocodile = Actor(
     fighter=Fighter(hp=20, dodge=6, resistance=2, accuracy=5, damage=(1, 8))
 )
 
-goblin_patrol = Actor(
+town_guard = Actor(
     char='g',
-    color=(200, 150, 30),
+    color=(200, 150, 80),
     walks=True,
-    name='Goblin patrol',
+    name='Town Guard',
     ai_cls = HostileEnemy,
-    fighter = Fighter(hp=6, dodge=10, resistance=1, accuracy=1, damage=(1, 6))
+    fighter = Fighter(hp=6, dodge=10, resistance=0, accuracy=1, damage=(1, 6))
 )
 
 gnome = Actor(
-    char='g',
+    char='G',
     color=(150,128,255),
     walks=True,
+    small=True,
     name='Gnome',
     ai_cls = HostileEnemy,
     fighter = Fighter(hp=6, dodge=17, resistance=0, accuracy=0, damage=(1, 2))
@@ -94,6 +97,7 @@ dog = Actor(
     char='d',
     color=(130,130,100),
     walks=True,
+    small=True,
     name='Dog',
     ai_cls = HostileEnemy,
     fighter = Fighter(hp=6, dodge=14, resistance=0, accuracy=2, damage=(1, 4))

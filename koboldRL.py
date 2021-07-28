@@ -6,6 +6,7 @@ import copy
 
 import tcod
 
+import  source.color as color
 from source.engine import Engine
 from source.map_generation.dungeon_gen import generate_sewer_dungeon
 import source.map_generation.entity_factories as entity_list
@@ -61,11 +62,18 @@ def main():
 
         engine.update_fov()
 
+        engine.message_log.add_message(
+            "Treacherous gnomes have stole several eggs from the hachery! It's your mission to retrive the lost eggs, else who knows what the gnomes will do with them?",
+            color.welcome_text
+        )
+
         dungeon_console = tcod.Console(width=dungeon_width, height=dungeon_height, order='F')
         while True:
-
-            engine.render(dungeon_console, context, seed)
-            engine.event_handler.handle_events()
+            # dungeon_console.clear()
+            engine.root_console.clear()
+            engine.event_handler.on_render(console=dungeon_console)
+            context.present(engine.root_console)
+            engine.event_handler.handle_events(context)
 
 
 if __name__ == '__main__':

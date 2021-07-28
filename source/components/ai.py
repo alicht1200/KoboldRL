@@ -6,12 +6,11 @@ import numpy as np
 import tcod
 
 from source.actions import Action, MeleeAction, MovementAction, WaitAction
-from source.components.base_component import BaseComponent
 
 if TYPE_CHECKING:
     from source.entity import Actor
 
-class BaseAI(Action, BaseComponent):
+class BaseAI(Action):
     entity: Actor
 
     def perform(self) -> None:
@@ -28,15 +27,15 @@ class BaseAI(Action, BaseComponent):
 
         #copy the walkable array.
 
-        stepable = np.full((self.entity.game_map.width, self.entity.game_map.height), fill_value=False, order="F")
+        stepable = np.full((self.entity.parent.width, self.entity.parent.height), fill_value=False, order="F")
         if self.entity.walks:
-            stepable |= self.entity.game_map.tiles['walkable']
+            stepable |= self.entity.parent.tiles['walkable']
         if self.entity.swims:
-            stepable |= self.entity.game_map.tiles['swimmable']
+            stepable |= self.entity.parent.tiles['swimmable']
 
         cost = np.array(stepable, dtype=np.int8)
 
-        for entity in self.entity.game_map.entities:
+        for entity in self.entity.parent.entities:
             # Check that an entity blocks movement and the cost isn't zero (blocking.)
             if entity.blocks_movement and cost[entity.x, entity.y]:
                 # Add to the cost of a blocked position.

@@ -10,13 +10,13 @@ def sewer_water_table_1() -> Entity:
 
 def sewer_sidewalk_table_1() -> Entity:
     return np_random.choice(
-    a=[entity_list.rat, entity_list.goblin_patrol, entity_list.gnome, entity_list.wererat],
+    a=[entity_list.rat, entity_list.town_guard, entity_list.gnome, entity_list.wererat],
     p=[0.45, 0.35, 0.1, 0.1,]
     )
 
 def sewer_room_table1() -> Entity:
     return np_random.choice(
-    a=[entity_list.rat, entity_list.goblin_patrol, entity_list.gnome, entity_list.wererat, entity_list.rogue],
+    a=[entity_list.rat, entity_list.town_guard, entity_list.gnome, entity_list.wererat, entity_list.rogue],
     p=[0.3, 0.2, 0.1, 0.1, 0.3,]
     )
 

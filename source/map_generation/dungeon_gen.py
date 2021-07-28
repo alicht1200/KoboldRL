@@ -51,7 +51,7 @@ def tunnel_sewer(dungeon, direction, x_focus, y_focus) -> Tuple[RectangularRoom,
         return tunnel, 'v'
 
 def populate_sewer_water(dungeon: GameMap, max_monsters: int) -> None:
-    number_of_monsters = random.randint(max_monsters//10, max_monsters)
+    number_of_monsters = random.randint(max_monsters//5, max_monsters)
     candidates = list(dungeon.swimmable_tiles)
     if len(candidates) > 0:
         for i in range(number_of_monsters):
@@ -60,7 +60,7 @@ def populate_sewer_water(dungeon: GameMap, max_monsters: int) -> None:
                 monster_tables.sewer_water_table_1().spawn(dungeon, x, y)
 
 def populate_sewer_sidewalk(dungeon: GameMap, max_monsters: int) -> None:
-    number_of_monsters = random.randint(max_monsters//10, max_monsters)
+    number_of_monsters = random.randint(max_monsters//5, max_monsters)
     candidates = list(dungeon.walkable_tiles)
     if len(candidates) > 0:
         for i in range(number_of_monsters):
@@ -70,7 +70,7 @@ def populate_sewer_sidewalk(dungeon: GameMap, max_monsters: int) -> None:
 
 def populate_room(room:RectangularRoom, dungeon:GameMap) -> None:
     table = random.random()
-    if table < 0.5:
+    if table < 0.48:
         return
     elif table < 0.98:
         for i in range(random.randint(1,3)):
@@ -187,8 +187,8 @@ def generate_sewer_dungeon(
                     seg_end = None
 
     #populate the sewer tunnels
-    populate_sewer_water(dungeon, 30)
-    populate_sewer_sidewalk(dungeon, 30)
+    populate_sewer_water(dungeon, 20)
+    populate_sewer_sidewalk(dungeon, 20)
 
     #Carve and populate extra rooms
     for room, direction in rooms:

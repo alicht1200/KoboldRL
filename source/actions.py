@@ -2,6 +2,7 @@ from __future__ import annotations
 from typing import Optional, Tuple, TYPE_CHECKING
 import random
 
+import source.color as color
 if TYPE_CHECKING:
     from source.engine import Engine
     from source.entity import Actor, Entity
@@ -14,7 +15,7 @@ class Action:
     @property
     def engine(self) ->Engine:
         """Return the engine this action belongs to."""
-        return self.entity.game_map.engine
+        return self.entity.parent.engine
 
     def perform(self) -> None:
         """Perform this action with the objects needed to determine its scope.
@@ -58,9 +59,9 @@ class MaximiseAction(Action):
 class FullScreenAction(Action):
     FullScreen = False
 
-    def perform(self, engine: Engine, entity: Entity) -> None:
+    def perform(self,) -> None:
         FullScreenAction.FullScreen = not FullScreenAction.FullScreen
-        engine.set_fullscreen(FullScreenAction.FullScreen)
+        self.engine.set_fullscreen(FullScreenAction.FullScreen)
 
 ##############
 # Game Actions
@@ -105,18 +106,24 @@ class MeleeAction(ActionWithDirection):
         target = self.target_actor
         if not target:
             return  #no entity to attack
-        print(f'{attacker.name.capitalize()} attaks {target.name.capitalize()}, ', end='')
+        if attacker is self.engine.player:
+            attack_color = color.player_atk
+        else:
+            attack_color = color.enemy_atk
+        attack_msg = f'{attacker.name.capitalize()} attaks {target.name.capitalize()}, '
         roll = random.randint(1, 20)
         if (roll + attacker.fighter.accuracy) < target.fighter.dodge and roll < 20:
-            print(f'and misses.')
-            return
-        damage = random.randint(*attacker.fighter.damage) - target.fighter.resistance
-        print(f'and Hits! ', end='')
-        if damage <= 0:
-            print(f'but fails to do any damage...')
-            return
-        print(f'causing {damage} hit points in damage')
-        target.fighter.hp -= damage
+            attack_msg += f'and misses.'
+        else:
+            damage = random.randint(*attacker.fighter.damage) - target.fighter.resistance
+            attack_msg += f'and Hits! '
+            if damage <= 0:
+                attack_msg += f'but fails to do any damage...'
+            else:
+                attack_msg += f'causing {damage} hit points in damage'
+            target.fighter.hp -= damage
+        self.engine.message_log.add_message(attack_msg, attack_color)
+
 
 
 
@@ -127,8 +134,9 @@ class MovementAction(ActionWithDirection):
 
         if not self.engine.game_map.in_bounds(dest_x, dest_y):
             return #Destination is out of bounds
-        if not ((self.engine.game_map.tiles["walkable"][dest_x, dest_y] and self.entity.walks)
-                or (self.engine.game_map.tiles["swimmable"][dest_x, dest_y] and self.entity.swims)):
+        if not (((self.engine.game_map.tiles["walkable"][dest_x, dest_y] and self.entity.walks)
+                or (self.engine.game_map.tiles["swimmable"][dest_x, dest_y] and self.entity.swims))
+                and (self.entity.small or not self.engine.game_map.tiles["small"][dest_x, dest_y] )):
             return  #Destination is blocked by a tile.
         if self.engine.game_map.get_blocking_entity_at_location(dest_x, dest_y):
             return  #destination is blocked by entity
